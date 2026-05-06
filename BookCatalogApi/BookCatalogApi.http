@@ -1,0 +1,28 @@
+@BookCatalogApi_HostAddress = http://localhost:5202
+
+GET {{BookCatalogApi_HostAddress}}/api/books
+Accept: application/json
+
+###
+
+POST {{BookCatalogApi_HostAddress}}/api/books
+Content-Type: application/json
+
+{
+  "title": "The Pragmatic Programmer",
+  "author": "Andy Hunt",
+  "genre": "Software",
+  "price": 39.99,
+  "publishedDate": "1999-10-20T00:00:00Z"
+}
+
+###
+
+GET {{BookCatalogApi_HostAddress}}/api/books/1
+Accept: application/json
+
+###
+
+DELETE {{BookCatalogApi_HostAddress}}/api/books/1
+
+###
