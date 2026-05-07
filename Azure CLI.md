@@ -18,7 +18,7 @@ Compress-Archive -Path .\publish\* -DestinationPath .\publish.zip -Force
 
 
 
-az webapp deploy --name bookcatalogapi-qian --src-path "C:Molnlösningar\BookCatalogApi\publish.zip" 
+az webapp deploy --name bookcatalogapi-qian --src-path "C:yourpath\BookCatalogApi\publish.zip" 
 
 
 
