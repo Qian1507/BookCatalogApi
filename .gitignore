@@ -265,7 +265,7 @@ ServiceFabricBackup/
 *.mdf
 *.ldf
 *.ndf
-
+*.env
 ```text
 # Business Intelligence projects
 *.zip
