@@ -1,26 +1,50 @@
 az login
 
-az configure --defaults group="YOUR-resource-group-NAME"
-
-az appservice plan create --name bookcatalogapi-asp --location westeurope --sku F1 --is-linux
+az configure --defaults group="YOUR-RESOURCE-GROUP-NAME"
 
 
-az webapp create --name bookcatalogapi-qian --plan bookcatalogapi-asp --runtime "DOTNETCORE:10.0"
+az appservice plan create --name <app-server-plan-name> --location westeurope --sku F1 --is-linux
+
+
+az webapp create --name <app-service-name> --plan <app-server-plan-name> --runtime "DOTNETCORE:10.0"
+
+# Create SQL Service
+az sql server create \
+  --name <sql-server-name> \
+  --location westeurope \
+  --admin-user <admin-user> \
+  --admin-password "<strong-password>"
+
+# Create serverless SQL Database
+az sql db create \
+  --server <sql-server-name> \
+  --name <database-name> \
+  --edition GeneralPurpose \
+  --compute-model Serverless \
+  --family Gen5 \
+  --capacity 2 \
+  --min-capacity 0.5 \
+  --auto-pause-delay 60
+
+
+  az sql db show-connection-string --server <sql-server-name> --name <database-name> -c ado.net -a SqlPassword
+
+
+  paste connection-string in backend user secret
+
+az webapp config connection-string set \
+  --name <app-service-name> \
+  --connection-string-type SQLAzure
+  --settings AZURE_SQL_CONNECTIONSTRING="Server=tcp:<sql-server-name>.database.windows.net,1433;Initial Catalog=<database-name>;Persist Security Info=False;User ID=<sql-admin-user>;Password=<sql-admin-password>;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;" \
+  
+
+dotnet ef database update
 
 
 
 
-in VS
-
-dotnet publish -c Release -o publish
-
-Compress-Archive -Path .\publish\* -DestinationPath .\publish.zip -Force
-
-
-
-az webapp deploy --name bookcatalogapi-qian --src-path "C:yourpath\BookCatalogApi\publish.zip" 
 
 
 
 
-az webapp browse --name bookcatalogapi-qian
+az webapp browse --name 
