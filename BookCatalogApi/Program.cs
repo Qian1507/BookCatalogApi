@@ -13,13 +13,21 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+
+// Apply pending EF Core migrations automatically on startup.
+// This keeps deployment simpler for the current single-app project setup.
+using (var scope = app.Services.CreateScope())
 {
-    app.MapOpenApi();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
 }
 
-//app.UseHttpsRedirection();
+// Configure the HTTP request pipeline.
+
+app.MapOpenApi();
+
+
+app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
