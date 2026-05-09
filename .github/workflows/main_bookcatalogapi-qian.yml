@@ -9,6 +9,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  WEBAPP_PATH: ./BookCatalogApi/BookCatalogApi.csproj
+  PUBLISH_PATH: ${{ github.workspace }}/publish
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,18 +26,21 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.x'
-
+          
+      - name: Restore
+        run: dotnet restore ${{ env.WEBAPP_PATH }}
+        
       - name: Build with dotnet
-        run: dotnet build --configuration Release
+        run: dotnet build ${{ env.WEBAPP_PATH }} --configuration Release --no-restore
 
       - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+        run: dotnet publish ${{ env.WEBAPP_PATH }} --configuration Release --no-build --output ${{ env.PUBLISH_PATH }}
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          path: ${{ env.PUBLISH_PATH }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,6 +54,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
+          path: ${{ github.workspace }}/publish
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -61,5 +69,5 @@ jobs:
         with:
           app-name: 'bookcatalogapi-qian'
           slot-name: 'Production'
-          package: .
+          package: ${{ github.workspace }}/publish
           
