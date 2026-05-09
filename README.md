@@ -1,113 +1,127 @@
-# BookCatalogApi
+# 📘 BookCatalogApi – Azure Deployment Project
 
-## 1. Local Development
+## 1. Overview
+**BookCatalogApi** is an ASP.NET Core Web API built with **.NET 10** and **Entity Framework Core**.
 
-This section describes how the BookCatalogApi was created and tested locally before deployment to Azure. The local development environment used Visual Studio 2026 and .NET 10. The purpose of this section is to ensure that the application is fully functional before deploying it to Azure.
-
----
-
-### 1. Create the project
-A new ASP.NET Core Web API project was created in Visual Studio 2026 using .NET 10.
+*   **Cloud Integration**: The project demonstrates full cloud deployment on Microsoft Azure, including compute, database, security, monitoring, and CI/CD automation.
+*   **Workflow**: The system was first developed locally and then deployed to Azure App Service using automated infrastructure scripts (Azure CLI) and GitHub Actions.
 
 ---
 
-### 2. Install required NuGet packages
-The following Entity Framework Core packages were installed:
+## 2. Architecture
+The application utilizes a modern cloud-native architecture:
 
-- Microsoft.EntityFrameworkCore  
-- Microsoft.EntityFrameworkCore.SqlServer  
-- Microsoft.EntityFrameworkCore.Tools  
+flowchart TD
 
-These packages are required to use Entity Framework Core with SQL Server and to create database migrations.
+    Client[Client / Browser / API Consumer]
+
+    subgraph AzureCloud["Azure Cloud"]
+        
+        AppService[Azure App Service<br/>.NET 10 Web API]
+
+        SQL[Azure SQL Database<br/>Serverless]
+
+        KV[Azure Key Vault<br/>Secrets Storage]
+
+        AI[Application Insights<br/>Monitoring & Logging]
+
+        Storage[Azure Storage Account<br/>Files / Backups]
+    end
+
+    Client --> AppService
+    AppService --> SQL
+
+    AppService --> KV
+    AppService --> AI
+    AppService --> Storage
+
+    KV -. Secure Secret Access .-> AppService
+
+  The architecture separates concerns into compute, data, security, and observability layers. 
+  Sensitive information is never stored in the application code and is retrieved securely via Azure Key Vault using Managed Identity.
+
+
+*   **Compute**: Azure App Service (Linux-based) hosting the Web API.
+*   **Database**: Azure SQL Database (Serverless tier) for persistent storage.
+*   **Secrets**: Azure Key Vault for managing sensitive credentials.
+*   **Observability**: Azure Application Insights for telemetry and logging.
+*   **Automation**: GitHub Actions for Continuous Integration and Deployment.
 
 ---
 
-### 3. Create the model and database context
-A `Book` model was created in the **Models** folder. It contains properties such as:
+## 3. Technologies Used
+*   **Framework**: ASP.NET Core Web API (.NET 10)
+*   **ORM**: Entity Framework Core
+*   **Host**: Azure App Service
+*   **Database**: Azure SQL Database (Serverless)
+*   **Security**: Azure Key Vault & Managed Identity
+*   **Monitoring**: Azure Application Insights
+*   **Storage**: Azure Storage Account
+*   **Automation**: GitHub Actions & Azure CLI (Infrastructure as Code)
 
-- Title  
-- Author  
-- Genre  
-- Price  
-- PublishedDate  
+---
 
-An `AppDbContext` class was created in the **Data** folder. The context exposes:
+## 4. Local Development & Testing
+Before moving to the cloud, the API was fully validated in a local environment.
 
-```csharp
-DbSet<Book>
+*   **Approach**: Entity Framework Core Code-First approach.
+*   **Endpoints**:
+    *   `GET /api/books` - List all books.
+    *   `POST /api/books` - Add a new book.
+    *   `DELETE /api/books/{id}` - Remove a book.
+*   **Validation**: Verified HTTP response codes (200, 201, 404) and JSON payload consistency.
 
-4. Configure the database connection
+---
 
-The connection string was added to appsettings.json:
+## 5. Infrastructure as Code (Azure CLI)
+All resources were provisioned using standardized scripts to ensure environment consistency.
 
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=BookCatalogDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
-  }
-}
+### Provisioning Snippets:
+```bash
+# Create App Service with .NET 10 Runtime
+az webapp create --name $APP_NAME --plan $PLAN_NAME --runtime "DOTNETCORE:10.0"
 
-For local development, the connection string is stored in appsettings.json.
-In later stages, this will be moved to Azure Key Vault for secure configuration.
+# Create Serverless SQL Database
+az sql db create --server $SQL_SERVER --name $DB_NAME --edition GeneralPurpose --compute-model Serverless
 
-5. Register EF Core in Program.cs
+6. Security Implementation
+Secrets Management
+Instead of hardcoding the SQL connection string in appsettings.json, I implemented Key Vault References:
 
-AppDbContext was registered using SQL Server:
+Managed Identity: Enabled a System-Assigned Identity for the Web App.
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-6. Configure API services
+Access Control: Granted Key Vault Secrets User role to the Web App's Identity.
 
-The API was configured to use controllers and built-in OpenAPI support:
+Configuration:
+  ConnectionStrings__DefaultConnection = @Microsoft.KeyVault(SecretUri=https://YOUR_KV.vault.azure.net/secrets/SqlConnectionString/)
 
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+### Network Security
+*   **Firewall**: Azure SQL is configured to block all public traffic except for:
+    1.  Internal Azure Services (required for the Web App).
+    2.  Specific Developer IP (required for database migrations).
+*   **Encryption**: HTTPS is strictly enforced (`https-only true`).
 
-In development mode, the OpenAPI document is exposed via:
+---
 
-app.MapOpenApi();
-7. Create the database using migrations
+## 7. Monitoring & Observability
+**Azure Application Insights** was integrated to provide:
+*   **Request Tracking**: Monitoring successful and failed API calls.
+*   **Live Metrics**: Real-time view of CPU and memory usage.
+*   **Exception Logs**: Detailed stack traces for unhandled exceptions (crucial for debugging 503 errors during initial deployment).
 
-Entity Framework Core migrations were created and applied using:
+---
 
-Add-Migration InitialCreate -OutputDir Data/Migrations
-Update-Database
+## 8. CI/CD Pipeline
+Continuous Deployment is handled via **GitHub Actions**. Every push to the `main` branch triggers:
+1.  **Build**: Compiles the .NET 10 code and runs tests.
+2.  **Package**: Creates a deployment artifact.
+3.  **Deploy**: Pushes the artifact to the Azure App Service.
 
-These commands created the database schema based on the Book model and AppDbContext.
+---
 
-8. Create the API controller
-
-A BooksController was created in the Controllers folder.
-
-Implemented endpoints:
-
-GET /api/books
-GET /api/books/{id}
-POST /api/books
-PUT /api/books/{id}
-DELETE /api/books/{id}
-9. Test the API locally
-
-The API was tested using the .http file support in Visual Studio.
-
-Example requests:
-
-GET /api/books
-POST /api/books
-GET /api/books/1
-
-A successful test means:
-
-Correct HTTP status codes
-Valid JSON responses
-Data is stored and retrieved from the database
-10. Local result
-
-The application was successfully tested locally with:
-
-ASP.NET Core Web API on .NET 10
-Entity Framework Core with SQL Server
-Database migrations
-CRUD endpoints
-Local testing via .http requests
-
-This confirms that the application is fully functional and ready for deployment to Azure App Service.
+## 9. Summary
+This project follows **Cloud Best Practices**:
+*   **Least Privilege**: Using RBAC for resource access.
+*   **Zero-Secrets in Code**: Utilizing Managed Identities and Key Vault.
+*   **Automation**: Fully scripted infrastructure and automated deployments.
+*   **Cost Efficiency**: Leveraging Serverless SQL for dynamic scaling.
