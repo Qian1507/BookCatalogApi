@@ -1,4 +1,4 @@
-# 📘 BookCatalogApi – Azure Deployment Project
+# 📘 BookCatalogApi – Azure Cloud Deployment Project
 
 ---
 
@@ -108,6 +108,11 @@ The API was tested locally using HTTP requests and verified for:
 - Database persistence
 - CRUD functionality
 
+## Simple Demo UI
+
+A minimal static HTML UI (`wwwroot/index.html`) is included for demonstration purposes.
+It allows basic interaction with the `/api/books` endpoint in a browser and runs in the same ASP.NET Core application as the Web API.
+The main focus of the project remains the API, Azure deployment, security configuration, and cloud services integration.
 ---
 
 # 5. Infrastructure as Code (Azure CLI)
@@ -226,3 +231,7 @@ This project demonstrates modern Azure cloud deployment practices, including:
 - Automated
 - Production-oriented
 - Cost-efficient (Serverless SQL)
+
+## Deployment
+
+See `deploy.md` for full Azure deployment instructions.

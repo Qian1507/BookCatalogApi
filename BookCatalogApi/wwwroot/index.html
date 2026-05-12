@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Catalog</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+            width: 200px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .save-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .edit-btn {
+            background-color: #ffc107;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        tr:hover {
+            background-color: #fafafa;
+        }
+
+        .status {
+            color: green;
+            margin-top: 10px;
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <h1>📚 Book Catalog</h1>
+
+    <div class="card">
+
+        <h2>Add / Edit Book</h2>
+
+        <input type="hidden" id="bookId">
+
+        <input type="text" id="title" placeholder="Title">
+
+        <input type="text" id="author" placeholder="Author">
+
+        <input type="text" id="genre" placeholder="Genre">
+
+        <input type="number" id="price" placeholder="Price" step="0.01">
+
+        <input type="date" id="publishedDate">
+
+        <br>
+
+        <button class="save-btn" onclick="saveBook()">
+            Save Book
+        </button>
+
+        <div class="status" id="status"></div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Search</h2>
+
+        <input type="text"
+               id="searchInput"
+               placeholder="Search by title..."
+               onkeyup="searchBooks()">
+
+    </div>
+
+    <div class="card">
+
+        <h2>Book List</h2>
+
+        <table>
+
+            <thead>
+
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Genre</th>
+                <th>Price</th>
+                <th>Published</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+
+            </thead>
+
+            <tbody id="bookList"></tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<script>
+
+    const apiUri = '/api/books';
+
+    let allBooks = [];
+
+    // Fetch books
+    async function fetchBooks() {
+
+        try {
+
+            const response = await fetch(apiUri);
+
+            allBooks = await response.json();
+
+            renderBooks(allBooks);
+
+        }
+        catch (error) {
+
+            console.error('Fetch failed:', error);
+
+        }
+    }
+
+    // Render books
+    function renderBooks(books) {
+
+        const list = document.getElementById('bookList');
+
+        list.innerHTML = '';
+
+        books.forEach(book => {
+
+            list.innerHTML += `
+                <tr>
+
+                    <td>${book.id}</td>
+
+                    <td>${book.title}</td>
+
+                    <td>${book.author}</td>
+
+                    <td>${book.genre ?? ''}</td>
+
+                    <td>$${book.price}</td>
+
+                    <td>
+                        ${formatDate(book.publishedDate)}
+                    </td>
+
+                    <td>
+                        ${formatDate(book.createdAt)}
+                    </td>
+
+                    <td>
+
+                        <button class="edit-btn"
+                            onclick="editBook(
+                                ${book.id},
+                                '${book.title}',
+                                '${book.author}',
+                                '${book.genre ?? ''}',
+                                ${book.price},
+                                '${book.publishedDate}'
+                            )">
+
+                            Edit
+
+                        </button>
+
+                        <button class="delete-btn"
+                            onclick="deleteBook(${book.id})">
+
+                            Delete
+
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+        });
+    }
+
+    // Save book
+    async function saveBook() {
+
+        const id = document.getElementById('bookId').value;
+
+        const title = document.getElementById('title').value.trim();
+
+        const author = document.getElementById('author').value.trim();
+
+        const genre = document.getElementById('genre').value.trim();
+
+        const price = parseFloat(document.getElementById('price').value);
+
+        const publishedDate =
+            document.getElementById('publishedDate').value;
+
+        if (!title || !author) {
+
+            alert('Title and Author are required.');
+
+            return;
+        }
+
+        const book = {
+
+            id: id ? parseInt(id) : 0,
+
+            title,
+
+            author,
+
+            genre,
+
+            price,
+
+            publishedDate
+
+        };
+
+        try {
+
+            // UPDATE
+            if (id) {
+
+                await fetch(`${apiUri}/${id}`, {
+
+                    method: 'PUT',
+
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+
+                    body: JSON.stringify(book)
+
+                });
+
+                showStatus('Book updated.');
+
+            }
+
+            // ADD
+            else {
+
+                await fetch(apiUri, {
+
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+
+                    body: JSON.stringify(book)
+
+                });
+
+                showStatus('Book added.');
+
+            }
+
+            clearForm();
+
+            fetchBooks();
+
+        }
+        catch (error) {
+
+            console.error('Save failed:', error);
+
+        }
+    }
+
+    // Edit
+    function editBook(id, title, author, genre, price, publishedDate) {
+
+        document.getElementById('bookId').value = id;
+
+        document.getElementById('title').value = title;
+
+        document.getElementById('author').value = author;
+
+        document.getElementById('genre').value = genre;
+
+        document.getElementById('price').value = price;
+
+        document.getElementById('publishedDate').value =
+            publishedDate.split('T')[0];
+    }
+
+    // Delete
+    async function deleteBook(id) {
+
+        if (!confirm('Delete this book?')) {
+            return;
+        }
+
+        try {
+
+            await fetch(`${apiUri}/${id}`, {
+
+                method: 'DELETE'
+
+            });
+
+            showStatus('Book deleted.');
+
+            fetchBooks();
+
+        }
+        catch (error) {
+
+            console.error('Delete failed:', error);
+
+        }
+    }
+
+    // Search
+    function searchBooks() {
+
+        const keyword = document
+            .getElementById('searchInput')
+            .value
+            .toLowerCase();
+
+        const filtered = allBooks.filter(book =>
+            book.title.toLowerCase().includes(keyword)
+        );
+
+        renderBooks(filtered);
+    }
+
+    // Clear form
+    function clearForm() {
+
+        document.getElementById('bookId').value = '';
+
+        document.getElementById('title').value = '';
+
+        document.getElementById('author').value = '';
+
+        document.getElementById('genre').value = '';
+
+        document.getElementById('price').value = '';
+
+        document.getElementById('publishedDate').value = '';
+    }
+
+    // Status
+    function showStatus(message) {
+
+        const status = document.getElementById('status');
+
+        status.innerText = message;
+
+        setTimeout(() => {
+
+            status.innerText = '';
+
+        }, 3000);
+    }
+
+    // Format date
+    function formatDate(dateString) {
+
+        if (!dateString) return '';
+
+        return new Date(dateString)
+            .toLocaleDateString();
+    }
+
+    // Initial load
+    fetchBooks();
+
+</script>
+
+</body>
+</html>
