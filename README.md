@@ -234,4 +234,4 @@ This project demonstrates modern Azure cloud deployment practices, including:
 
 ## Deployment
 
-See `deploy.md` for full Azure deployment instructions.
+See `DeploymentGuide.md` for full Azure deployment instructions.
