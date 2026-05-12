@@ -26,7 +26,8 @@ using (var scope = app.Services.CreateScope())
 
 app.MapOpenApi();
 
-
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
