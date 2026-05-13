@@ -141,12 +141,13 @@ This will create/update the database schema in the Azure SQL Database using the 
 To enable GitHub Actions to deploy the Web API to Azure App Service, a publish profile must be exported from Azure and stored as a GitHub secret.
 
 1. Retrieve the publish profile using Azure CLI:
-
+    ```bash
     az webapp deployment list-publishing-profiles ^
       --name %APP_NAME% ^
       --resource-group %RG% ^
       --xml
-
+    ```
+    
 2. Copy the XML output.
 
 3. In GitHub, navigate to:
