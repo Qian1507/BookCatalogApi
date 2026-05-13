@@ -141,31 +141,41 @@ The deployment scripts automate:
 
 ---
 
-# 6. Security Implementation
+# 6. Security
 
-## Secrets Management
+## Secret Management
 
-Instead of storing secrets inside `appsettings.json`, Azure Key Vault References are used.
+Sensitive values such as database connection strings are not stored directly in source code or `appsettings.json`.
 
-### Managed Identity
+Azure Key Vault is used to securely manage production secrets.
 
-A System-Assigned Managed Identity was enabled for the Web App.
+---
 
-### RBAC Access Control
+## Managed Identity
 
-The Web App identity was granted:
+The Azure App Service uses a System-Assigned Managed Identity to authenticate with Azure Key Vault.
+
+This avoids hardcoding credentials inside the application.
+
+---
+
+## Key Vault Access
+
+The Web App identity was granted the following Azure RBAC role:
 
 - `Key Vault Secrets User`
 
-permissions on Azure Key Vault.
+This allows the application to retrieve secrets securely at runtime.
 
-### Key Vault Reference
+---
+
+## Key Vault Reference
+
+Azure App Service configuration references secrets directly from Azure Key Vault:
 
 ```text
 ConnectionStrings__DefaultConnection=@Microsoft.KeyVault(SecretUri=https://YOUR_KV.vault.azure.net/secrets/SqlConnectionString/)
 ```
-
----
 
 ## Network Security
 

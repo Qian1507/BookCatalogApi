@@ -265,8 +265,9 @@ ServiceFabricBackup/
 *.mdf
 *.ldf
 *.ndf
-*.env
-```text
+.env*
+!.env.example
+
 # Business Intelligence projects
 *.zip
 
@@ -366,3 +367,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+
+# Local deployment artifacts
+publishProfile.xml
+publishProfile*.xml
