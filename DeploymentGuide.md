@@ -43,7 +43,7 @@ git --version
 
 Copy the example environment file:
 
-```bash
+```cmd
 copy .env.example .env
 ```
 
@@ -55,26 +55,49 @@ SQL_SERVER_NAME=
 KV_NAME=
 ```
 
-The `.env` file is used only for local deployment scripts and should never be committed to source control.
+The `.env` file is used only for local deployment scripts and should never be committed to source control.  
+The same applies to the `publishProfile.xml` file that is generated during deployment and later used for GitHub Actions.
 
 Sensitive production values are stored using:
 
 - Azure App Service configuration
 - Azure Key Vault
+- GitHub Actions secrets
+
+## Security & Git Ignore Rules
+
+The following files must NOT be committed:
+
+- `.env` / `.env.local` – local environment variables for `deploy.cmd`
+- `publishProfile.xml` – App Service publish profile generated during deployment
+
+These files are excluded from version control using `.gitignore`:
+
+```gitignore
+.env*
+!.env.example
+publishProfile.xml
+publishProfile*.xml
+*.pubxml
+*.publishsettings
+```
+
+This prevents sensitive information such as connection strings, passwords and publish credentials from being stored in Git.  
+In production, secrets are managed via Azure App Service configuration, Azure Key Vault and GitHub Actions secrets instead of local files..
 
 ---
 
 ## 4. Login to Azure
 
-```bash
+You can log in manually before running the script to verify that you are using the correct Azure account and subscription:
+
+```cmd
 az login
-```
-
-Verify the active subscription:
-
-```bash
 az account show
 ```
+
+> Note: The `deploy.cmd` script also calls `az login`.  
+> If you are already signed in and using the correct subscription, running `deploy.cmd` directly is usually enough.
 
 ---
 
@@ -91,9 +114,13 @@ The Azure infrastructure is provisioned using the deploy.cmd script located in t
 
 The script automates the Azure deployment process using Azure CLI commands and reduces the need for manual configuration in the Azure portal.
 
-Run the script:
+GitHub Actions publish profile configuration still requires a one-time manual setup in GitHub repository secrets.
 
-deploy.cmd
+Run the deployment script from Command Prompt:
+
+```cmd
+.\deploy.cmd
+```
 
 The script performs the following deployment steps automatically.
 
@@ -101,7 +128,9 @@ The script performs the following deployment steps automatically.
 
 The deployment script configures the default Azure Resource Group using Azure CLI.
 
+```cmd
 az configure --defaults group=%RG%
+```
 
 The Resource Group was already provided by the school Azure subscription and therefore did not need to be created manually.
 
@@ -111,11 +140,13 @@ This configuration ensures that all Azure resources are deployed into the correc
 
 An Azure App Service Plan is created to host the ASP.NET Core Web API.
 
+```cmd
 az appservice plan create ^
   --name %PLAN_NAME% ^
   --location %LOCATION% ^
   --sku B1 ^
   --is-linux
+```
 
 A Linux-based hosting plan was selected because the application targets ASP.NET Core running on Linux containers.
 
@@ -125,19 +156,22 @@ The B1 pricing tier was used for development and testing purposes.
 
 The Azure Web App is created using the previously created App Service Plan.
 
+```cmd
 az webapp create ^
   --name %APP_NAME% ^
   --plan %PLAN_NAME% ^
   --runtime "DOTNETCORE:10.0"
+```
 
 The Web App hosts the ASP.NET Core REST API in Azure App Service.
 
 HTTPS-only mode is then enabled to improve transport security.
 
+```cmd
 az webapp update ^
   --name %APP_NAME% ^
   --https-only true
-
+```
 This prevents insecure HTTP traffic.
 
 ### 6.4 Create Azure SQL Server and Database
@@ -158,15 +192,18 @@ Local development access
 
 The following rule allows Azure services to access the SQL Server:
 
+```cmd
 az sql server firewall-rule create ^
   --server %SQL_SERVER_NAME% ^
   --name AllowAzureServices ^
   --start-ip-address 0.0.0.0 ^
   --end-ip-address 0.0.0.0
-
+```
 The local public IP address is automatically retrieved:
 
+```bash
 curl -s ifconfig.me
+```
 
 A second firewall rule is then created for the developer machine.
 
@@ -193,9 +230,11 @@ It addresses the assignment requirement that App Service IP restrictions must be
 
 Azure Key Vault is created to securely store sensitive configuration values.
 
+```cmd
 az keyvault create ^
   --name %KV_NAME% ^
   --location %LOCATION%
+```
 
 The SQL connection string is stored as a Key Vault secret instead of directly inside application configuration files.
 
@@ -205,8 +244,10 @@ This improves security and prevents secrets from being committed to source contr
 
 A system-assigned Managed Identity is enabled for the Azure Web App.
 
+```cmd
 az webapp identity assign ^
   --name %APP_NAME%
+```
 
 The managed identity is granted permission to read secrets from Azure Key Vault.
 
@@ -216,9 +257,11 @@ This removes the need to store credentials directly inside the application.
 
 The SQL connection string is exposed to the ASP.NET Core application using an Azure App Service configuration setting that references the Key Vault secret.
 
+```cmd
 az webapp config appsettings set ^
   --name %APP_NAME% ^
   --settings ConnectionStrings__DefaultConnection=@Microsoft.KeyVault(...)
+```
 
 At runtime, Azure App Service automatically resolves the Key Vault secret and injects the connection string into the application configuration.
 
@@ -246,23 +289,27 @@ az storage container create ...
 
 The storage account can later be used for backups, uploaded files, or future Blob Storage integration.
 
-6.11 Restart Azure Web App
+### 6.12 Restart Azure Web App
 
 The Web App is restarted after all configuration changes have been applied.
 
+```cmd
 az webapp restart ^
   --name %APP_NAME%
+```
 
 This ensures that all environment settings and Key Vault references are loaded correctly by the application runtime.
 
-### 6.12 Export Publish Profile
+### 6.13 Export Publish Profile
 
 A publish profile is exported from Azure App Service.
 
+```cmd
 az webapp deployment list-publishing-profiles ^
   --name %APP_NAME% ^
   --resource-group %RG% ^
   --xml
+```
 
 The generated XML publish profile is later stored as a GitHub Actions repository secret and used for CI/CD deployment authentication.
 
@@ -288,7 +335,7 @@ After the Azure SQL Server and Database have been created by `deploy.cmd`, the s
    dotnet user-secrets set "ConnectionStrings:DefaultConnection" "<paste-ado-net-connection-string-here>"
    ```
 
-3. Run the EF Core migrations against the Azure SQL Database:
+4. Run the EF Core migrations against the Azure SQL Database:
 
    ```bash
    dotnet ef database update
@@ -355,8 +402,8 @@ The workflow automatically:
 Open the deployed application:
 
 ```text
-https://YOUR_APP_NAME.azurewebsites.net
-```
+  https://YOUR_APP_NAME.azurewebsites.net
+  ```
 
 Verify:
 

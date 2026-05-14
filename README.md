@@ -150,10 +150,13 @@ The deployment scripts automate:
 
 ## Secret Management
 
-Sensitive values such as database connection strings are not stored directly in source code or `appsettings.json`.
+Sensitive values such as database connection strings are not stored in source code or `appsettings.json`.  
+Production secrets are stored in Azure Key Vault and injected into the app via Azure App Service configuration using Key Vault references and a system-assigned Managed Identity.
 
-Azure Key Vault is used to securely manage production secrets.
+For local development, secrets such as connection strings are kept in `.env` or ASP.NET Core user secrets and are excluded from Git via `.gitignore`.  
+The App Service publish profile used by GitHub Actions is also never committed; it is stored only as a GitHub Actions repository secret.
 
+See `DeploymentGuide.md` for the full deployment and security details.
 ---
 
 ## Managed Identity
