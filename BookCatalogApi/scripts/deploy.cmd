@@ -82,7 +82,7 @@ az sql db create ^
   --auto-pause-delay 15
 
 REM ==========================================
-REM SQL Firewall Rules
+REM 3. SQL Firewall Rules
 REM ==========================================
 az sql server firewall-rule create ^
   --server %SQL_SERVER_NAME% ^
@@ -99,7 +99,19 @@ az sql server firewall-rule create ^
   --end-ip-address !MY_IP!
 
 REM ==========================================
-REM 3. Key Vault + Identity
+REM 4. App Service IP Restriction
+REM ==========================================
+az webapp config access-restriction add ^
+  --resource-group %RG% ^
+  --name %APP_NAME% ^
+  --rule-name AllowMyIp ^
+  --action Allow ^
+  --ip-address !MY_IP!/32 ^
+  --priority 100
+
+
+REM ==========================================
+REM 5. Key Vault + Identity
 REM ==========================================
 az keyvault create ^
   --name %KV_NAME% ^
@@ -127,10 +139,10 @@ az keyvault secret set ^
 
 REM Enable Managed Identity
 az webapp identity assign ^
-  --name %APP_NAME%
+  --name %APP_NAME% ^
   --resource-group %RG%
 
-for /f "delims=" %%i in ('az webapp identity show --name %APP_NAME% --query principalId -o tsv') do set APP_PRINCIPAL_ID=%%i
+for /f "delims=" %%i in ('az webapp identity show --name %APP_NAME% --resource-group %RG% --query principalId --output tsv') do set APP_PRINCIPAL_ID=%%i
 
 az role assignment create ^
   --assignee-object-id %APP_PRINCIPAL_ID% ^
@@ -144,32 +156,36 @@ az webapp config appsettings set ^
   --settings ConnectionStrings__DefaultConnection=@Microsoft.KeyVault(SecretUri=https://%KV_NAME%.vault.azure.net/secrets/SqlConnectionString/)
 
 REM ==========================================
-REM 4. Application Insights
+REM 6. Application Insights
 REM ==========================================
 az monitor app-insights component create ^
   --app %APP_NAME%-insights ^
-  --location %LOCATION%
+  --location %LOCATION% ^
+  --resource-group %RG%
 
 for /f "delims=" %%i in ('az monitor app-insights component show --app %APP_NAME%-insights --query connectionString -o tsv') do set AI_CONN=%%i
 
 az webapp config appsettings set ^
   --name %APP_NAME% ^
+  --resource-group %RG% ^
   --settings APPLICATIONINSIGHTS_CONNECTION_STRING=!AI_CONN!
 
 REM ==========================================
-REM 5. Logging
+REM 7. Logging
 REM ==========================================
 az webapp log config ^
   --name %APP_NAME% ^
+  --resource-group %RG% ^
   --application-logging true ^
   --level verbose
 
 az webapp log config ^
   --name %APP_NAME% ^
+  --resource-group %RG% ^
   --web-server-logging filesystem
 
 REM ==========================================
-REM 6. Storage Account
+REM 8. Storage Account
 REM ==========================================
 az storage account create ^
   --name %STORAGE_NAME% ^
@@ -179,16 +195,18 @@ az storage account create ^
 
 az storage container create ^
   --name backups ^
-  --account-name %STORAGE_NAME%
+  --account-name %STORAGE_NAME% ^
+  --auth-mode login
 
 REM ==========================================
-REM 7. Restart App
+REM 9. Restart App
 REM ==========================================
 az webapp restart ^
-  --name %APP_NAME%
+  --name %APP_NAME% ^
+  --resource-group %RG%
 
 REM ==========================================
-REM 8. Publish Profile (GitHub Actions)
+REM 10. Publish Profile (GitHub Actions)
 REM ==========================================
 az webapp deployment list-publishing-profiles ^
   --name %APP_NAME% ^

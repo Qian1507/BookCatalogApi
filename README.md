@@ -1,8 +1,12 @@
+![Azure](https://img.shields.io/badge/Azure-Cloud-blue)
+![.NET](https://img.shields.io/badge/.NET-10-purple)
+![CI/CD](https://img.shields.io/badge/CI/CD-GitHub%20Actions-green)
+
 # 📘 BookCatalogApi – Azure Cloud Deployment Project
 
 ---
 
-# 1. Overview
+## 1. Overview
 
 **BookCatalogApi** is an ASP.NET Core Web API built with **.NET 10** and **Entity Framework Core**.
 
@@ -113,6 +117,7 @@ The API was tested locally using HTTP requests and verified for:
 A minimal static HTML UI (`wwwroot/index.html`) is included for demonstration purposes.
 It allows basic interaction with the `/api/books` endpoint in a browser and runs in the same ASP.NET Core application as the Web API.
 The main focus of the project remains the API, Azure deployment, security configuration, and cloud services integration.
+
 ---
 
 # 5. Infrastructure as Code (Azure CLI)
@@ -244,4 +249,4 @@ This project demonstrates modern Azure cloud deployment practices, including:
 
 ## Deployment
 
-See `DeploymentGuide.md` for full Azure deployment instructions.
+Detailed deployment instructions can be found in [DeploymentGuide.md](DeploymentGuide.md).
