@@ -234,7 +234,6 @@ Below is a step-by-step explanation of the deployment process.
 - Restart Web App
 - Enable publishing credentials
 - Export `publishProfile.xml`
-- Configure GitHub Actions deployment secret
 
 The generated XML publish profile is later stored as a GitHub Actions repository secret and used for CI/CD deployment authentication.
 
@@ -349,11 +348,13 @@ Verify that:
 - Blob Storage integration works
 - Key Vault references resolve correctly
 
+---
+
 ## 11. Backup Limitation and Optional Upgrade
 
 This deployment uses the B1 App Service Plan for cost control in the school environment.  
 Because automated App Service backup requires a higher pricing tier, backup is not configured in `deploy.cmd`.
----
+
 
 ## 11.1 Upgrade App Service Plan
 
