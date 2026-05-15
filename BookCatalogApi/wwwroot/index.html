@@ -57,6 +57,11 @@
             color: white;
         }
 
+         .upload-btn {
+        background-color: #007bff;
+        color: white;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -81,6 +86,12 @@
             color: green;
             margin-top: 10px;
         }
+
+          .file-list {
+        margin-top: 10px;
+        padding-left: 15px;
+    }
+
 
     </style>
 
@@ -116,7 +127,7 @@
         <div class="status" id="status"></div>
 
     </div>
-
+  <!-- SEARCH -->
     <div class="card">
 
         <h2>Search</h2>
@@ -127,7 +138,7 @@
                onkeyup="searchBooks()">
 
     </div>
-
+    <!-- BOOK LIST -->
     <div class="card">
 
         <h2>Book List</h2>
@@ -155,11 +166,28 @@
 
     </div>
 
+     <!-- STORAGE UPLOAD -->
+    <div class="card">
+        <h2>☁️ Azure Blob Storage</h2>
+
+        <input type="file" id="fileInput">
+        <button class="upload-btn" onclick="uploadFile()">Upload File</button>
+
+        <div class="status" id="uploadStatus"></div>
+
+        <h3>Uploaded Files</h3>
+        <button onclick="loadFiles()">Refresh List</button>
+
+        <ul class="file-list" id="fileList"></ul>
+    </div>
+
+
 </div>
 
 <script>
 
     const apiUri = '/api/books';
+    const storageApi = '/api/storage';
 
     let allBooks = [];
 
@@ -408,31 +436,63 @@
         document.getElementById('publishedDate').value = '';
     }
 
-    // Status
-    function showStatus(message) {
+    /* ================= STORAGE ================= */
 
-        const status = document.getElementById('status');
+async function uploadFile() {
 
-        status.innerText = message;
+    const file = document.getElementById('fileInput').files[0];
 
-        setTimeout(() => {
-
-            status.innerText = '';
-
-        }, 3000);
+    if (!file) {
+        alert("Select file first");
+        return;
     }
 
-    // Format date
-    function formatDate(dateString) {
+    const formData = new FormData();
+    formData.append("file", file);
 
-        if (!dateString) return '';
+    const res = await fetch(`${storageApi}/upload`, {
+        method: "POST",
+        body: formData
+    });
 
-        return new Date(dateString)
-            .toLocaleDateString();
+    if (res.ok) {
+        const data = await res.json();
+        document.getElementById('uploadStatus').innerText =
+            "Uploaded: " + data.blobName;
     }
 
-    // Initial load
-    fetchBooks();
+    loadFiles();
+}
+
+async function loadFiles() {
+
+    const res = await fetch(`${storageApi}/list`);
+    const files = await res.json();
+
+    const list = document.getElementById('fileList');
+    list.innerHTML = '';
+
+    files.forEach(f => {
+        list.innerHTML += `<li>${f}</li>`;
+    });
+}
+
+/* ================= UTIL ================= */
+
+function showStatus(msg) {
+    const el = document.getElementById('status');
+    el.innerText = msg;
+    setTimeout(() => el.innerText = '', 3000);
+}
+
+function formatDate(d) {
+    if (!d) return '';
+    return new Date(d).toLocaleDateString();
+}
+
+/* INIT */
+fetchBooks();
+loadFiles();
 
 </script>
 
