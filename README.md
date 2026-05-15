@@ -15,6 +15,7 @@ The project demonstrates a complete cloud-native deployment workflow on Microsof
 - Azure App Service hosting
 - Azure SQL Database
 - Azure Key Vault integration
+- Azure Storage Account (Blob storage for files and backups)
 - Managed Identity authentication
 - Application Insights monitoring
 - CI/CD automation using GitHub Actions
@@ -64,6 +65,7 @@ Sensitive information is never stored directly in source code and is securely re
 
 - **Compute** → Azure App Service (Linux)
 - **Database** → Azure SQL Database (Serverless)
+- **Storage** → Azure Storage Account (Blob storage for files and backups)
 - **Secrets Management** → Azure Key Vault
 - **Monitoring** → Azure Application Insights
 - **Automation** → GitHub Actions + Azure CLI
