@@ -401,10 +401,14 @@ echo.
 echo ==========================================
 echo STEP 20 - Configure Key Vault reference in Web App settings
 echo ==========================================
+
+set KV_REF=@Microsoft.KeyVault(SecretUri=https://%KV_NAME%.vault.azure.net/secrets/SqlConnectionString/)
+
 call az webapp config appsettings set ^
   --name %APP_NAME% ^
   --resource-group %RG% ^
-  --settings ConnectionStrings__DefaultConnection=@Microsoft.KeyVault(SecretUri=https://%KV_NAME%.vault.azure.net/secrets/SqlConnectionString/)
+  --settings "ConnectionStrings__DefaultConnection=%KV_REF%"
+
 if errorlevel 1 (
     echo ERROR: Failed to configure Key Vault reference in Web App settings
     pause
@@ -520,7 +524,24 @@ echo SUCCESS: Storage Account created
 
 echo.
 echo ==========================================
-echo STEP 27 - Create backup container
+echo STEP 27 - Create images container
+echo ==========================================
+
+call az storage container create ^
+  --name images ^
+  --account-name "%STORAGE_NAME%" ^
+  --auth-mode login
+if errorlevel 1 (
+    echo ERROR: Failed to create images container
+    pause
+    exit /b 1
+)
+
+echo SUCCESS: Images container created
+
+echo.
+echo ==========================================
+echo STEP 28 - Create backup container
 echo ==========================================
 call az storage container create ^
   --name backups ^
@@ -534,12 +555,60 @@ if errorlevel 1 (
 
 echo SUCCESS: Backup container created
 
+echo.
+echo ==========================================
+echo STEP 29 - Get Storage connection string
+echo ==========================================
+
+for /f "delims=" %%i in ('az storage account show-connection-string --name "%STORAGE_NAME%" --resource-group "%RG%" --query connectionString -o tsv') do set "STORAGE_CONN_STR=%%i"
+if errorlevel 1 (
+    echo ERROR: Failed to get Storage connection string
+    pause
+    exit /b 1
+)
+
+echo SUCCESS: Storage connection string retrieved
+
+echo.
+echo ==========================================
+echo STEP 30 - Store Storage connection string in Key Vault
+echo ==========================================
+
+call az keyvault secret set ^
+  --vault-name "%KV_NAME%" ^
+  --name "StorageConnectionString" ^
+  --value "%STORAGE_CONN_STR%"
+if errorlevel 1 (
+    echo ERROR: Failed to store Storage connection string in Key Vault
+    pause
+    exit /b 1
+)
+
+echo SUCCESS: Storage connection string stored in Key Vault
+
+echo.
+echo ==========================================
+echo STEP 31 - Configure Storage Key Vault reference in Web App
+echo ==========================================
+
+call az webapp config appsettings set ^
+  --name "%APP_NAME%" ^
+  --resource-group "%RG%" ^
+  --settings "ConnectionStrings__StorageAccount=@Microsoft.KeyVault(SecretUri=https://%KV_NAME%.vault.azure.net/secrets/StorageConnectionString/)"
+if errorlevel 1 (
+    echo ERROR: Failed to configure StorageAccount Key Vault reference in Web App settings
+    pause
+    exit /b 1
+)
+
+echo SUCCESS: StorageAccount Key Vault reference configured in Web App
+
 REM ==========================================
 REM 9. Restart App
 REM ==========================================
 echo.
 echo ==========================================
-echo STEP 28 - Restart Web App
+echo STEP 32 - Restart Web App
 echo ==========================================
 call az webapp restart ^
   --name %APP_NAME% ^
@@ -555,13 +624,37 @@ echo SUCCESS: Web App restarted
 REM ==========================================
 REM 10. Publish Profile (GitHub Actions)
 REM ==========================================
+
 echo.
 echo ==========================================
-echo STEP 29 - Export publish profile
+echo STEP 33 - Enable SCM Basic Auth publishing credentials
 echo ==========================================
+
+call az resource update ^
+  --resource-group "%RG%" ^
+  --name scm ^
+  --namespace Microsoft.Web ^
+  --resource-type basicPublishingCredentialsPolicies ^
+  --parent "sites/%APP_NAME%" ^
+  --set properties.allow=true
+if errorlevel 1 (
+    echo ERROR: Failed to enable SCM Basic Auth Publishing Credentials
+    pause
+    exit /b 1
+)
+
+echo SUCCESS: SCM Basic Auth publishing credentials enabled
+
+echo.
+echo ==========================================
+echo STEP 34 - Export publish profile
+echo ==========================================
+
+if exist "publishProfile.xml" del /f /q "publishProfile.xml"
+
 call az webapp deployment list-publishing-profiles ^
-  --name %APP_NAME% ^
-  --resource-group %RG% ^
+  --name "%APP_NAME%" ^
+  --resource-group "%RG%" ^
   --xml > publishProfile.xml
 if errorlevel 1 (
     echo ERROR: Failed to export publish profile

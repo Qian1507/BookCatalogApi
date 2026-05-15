@@ -1,3 +1,4 @@
+using Azure.Storage.Blobs;
 using BookCatalogApi.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,22 +8,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+//Add services to the application insights telemetry.
+builder.Services.AddApplicationInsightsTelemetry();
+
+builder.Services.AddSingleton(x =>
+    new BlobServiceClient(
+        builder.Configuration.GetConnectionString("StorageAccount")));
+
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
-
-
-// Apply pending EF Core migrations automatically on startup.
-// This keeps deployment simpler for the current single-app project setup.
-//using (var scope = app.Services.CreateScope())
-//{
-//    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-//    db.Database.Migrate();
-//}
-
-// Configure the HTTP request pipeline.
 
 app.MapOpenApi();
 
