@@ -158,7 +158,6 @@ Production secrets are stored in Azure Key Vault and injected into the app via A
 For local development, secrets such as connection strings are kept in `.env` or ASP.NET Core user secrets and are excluded from Git via `.gitignore`.  
 The App Service publish profile used by GitHub Actions is also never committed; it is stored only as a GitHub Actions repository secret.
 
-See `DeploymentGuide.md` for the full deployment and security details.
 ---
 
 ## Managed Identity
