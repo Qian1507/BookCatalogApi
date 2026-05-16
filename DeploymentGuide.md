@@ -359,17 +359,20 @@ After automated deployment, complete the following:
 
 ### Database
 
+- Retrieve the Azure SQL connection string
+- Store it in local user secrets
 - Run EF Core migrations
 
 ### Storage
 
-- Verify that the Key Vault secret exists
-- Confirm that the Web App Key Vault reference works
+- Retrieve the Storage Account connection string
+- Store it in local user secrets
 
 ### CI/CD
 
-- Add the GitHub secret
-- Enable GitHub Actions deployment
+- Add the `AZURE_WEBAPP_PUBLISH_PROFILE` GitHub secret
+- Create the GitHub Actions workflow file
+- Trigger deployment with `git push origin main`
 
 ---
 
