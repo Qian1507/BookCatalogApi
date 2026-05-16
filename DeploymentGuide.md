@@ -451,18 +451,22 @@ az webapp config backup show ^
 # Final Deployment Flow Summary
 
 ```text
-1. Clone Repository  
-2. Configure .env  
-3. Login to Azure  
-4. Run deploy.cmd  
+1. Clone repository
+2. Configure .env
+3. Login to Azure
+4. Run deploy.cmd
 
-5. Apply EF Core migrations  
-   - Includes setting up SQL connection string (locally via user-secrets)
+5. Configure local connection strings
+   - Retrieve Azure SQL and Storage connection strings
+   - Store them in local user secrets
 
-6. Configure GitHub Actions secret  
-   - Includes storing publish profile for Azure deployment  
-   - Storage connection string and SQL secrets are managed via Azure Key Vault
+6. Apply EF Core migrations
+   - Initialize the Azure SQL schema using EF Core
 
-7. Push code to GitHub  
-8. Verify deployment
+7. Configure GitHub Actions CI/CD
+   - Add AZURE_WEBAPP_PUBLISH_PROFILE as a GitHub secret
+   - Create/update .github/workflows/deploy.yml for Azure deployment
+
+8. Push code to GitHub
+9. Verify deployment
 ```
