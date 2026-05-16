@@ -245,14 +245,14 @@ After `deploy.cmd` has completed successfully, most Azure resources are automati
 
 However, the following manual steps are still required to finalize the deployment:
 
-- Database initialization (EF Core)
-EF Core migrations must be run manually to initialize the Azure SQL schema.
+- Database initialization (EF Core)  
+  Run EF Core migrations manually after setting the Azure SQL connection string.
 
-- CI/CD setup (GitHub Actions)
-GitHub secrets and workflows require manual configuration for secure deployments.
+- Storage connection configuration  
+  Manually retrieve and store the Storage connection string in user secrets.
 
-- Verification of Storage integration
-Manual verification ensures the Storage connection via Key Vault works at runtime.
+- CI/CD setup (GitHub Actions)  
+  Manually configure the GitHub secret and workflow for secure deployments.
 
 ## 7.1 Configure Local Connection Strings
 
